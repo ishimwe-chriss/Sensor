@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensormobileapplication/components/ThemeProvider.dart';
-import 'package:sensormobileapplication/screens/StepCounter.dart';
-import 'package:sensormobileapplication/screens/lightsensor.dart';
 import 'package:sensormobileapplication/screens/maps.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'light_level_notifier.dart';
+import 'light_level_screen.dart';
+import 'motion_notifier.dart';
+import 'motion_screen.dart';
+
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initNotifications();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MotionNotifier()),
+        ChangeNotifierProvider(create: (_) => LightLevelNotifier()),
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+      ],
       child: const MyApp(),
     ),
   );
-  await initNotifications();
 }
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+FlutterLocalNotificationsPlugin();
 
 Future<void> initNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+  AndroidInitializationSettings('@mipmap/ic_launcher');
 
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
@@ -65,61 +74,97 @@ class _MyHomePageState extends State<MyHomePage> {
     final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: theme.hintColor,
-        title: Text(
-          widget.title,
-          style: TextStyle(color: theme.primaryColor),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFB3E5FC), Color(0xFF0288D1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildOption(
-            context,
-            theme,
-            icon: Icons.map,
-            label: 'Maps',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => MapPage())),
+        child: Center(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            shrinkWrap: true,
+            children: [
+              const Center(
+                child: Text(
+                  'Home',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 50),
+              _buildOption(
+                context,
+                theme,
+                icon: Icons.map,
+                label: 'Geo Locator',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => MapPage())),
+              ),
+              _buildOption(
+                context,
+                theme,
+                icon: Icons.run_circle_outlined,
+                label: 'Motion Detector',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => MotionScreen())),
+              ),
+              _buildOption(
+                context,
+                theme,
+                icon: Icons.lightbulb_rounded,
+                label: 'Light Sensor',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => LightLevelScreen())),
+              ),
+            ],
           ),
-          _buildOption(
-            context,
-            theme,
-            icon: Icons.run_circle_outlined,
-            label: 'Step Counter',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => StepCounterPage())),
-          ),
-          _buildOption(
-            context,
-            theme,
-            icon: Icons.lightbulb_rounded,
-            label: 'Light Sensor',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => LightSensorPage())),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildOption(BuildContext context, ThemeData theme, {required IconData icon, required String label, required VoidCallback onTap}) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.symmetric(vertical: 16.0),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withOpacity(0.3),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: ListTile(
-        leading: Icon(icon, size: 50.0, color: theme.primaryColor),
-        title: Text(label, style: TextStyle(color: theme.primaryColor)),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(50),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: theme.primaryColor.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 50.0, color: Colors.white),
+              const SizedBox(width: 20),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
